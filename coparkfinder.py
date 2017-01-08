@@ -105,19 +105,19 @@ def get_parks_for_activity(intent):
                     "Try asking about boating or fishing for example."
     should_end_session = False
     if "Activity" in intent["slots"]:
-        activity_name = intent["slots"]["Activity"]["value"]
+        activity_name = get_activity_name(intent["slots"]["Activity"]["value"])
         query_name = "'" + activity_name.replace(" ", "%20") + "'"
 
         card_title = "Parks With " + activity_name.title()
 
-        response = urllib2.urlopen(API_BASE + "/parks?activity=" + query_name )
+        response = urllib2.urlopen(API_BASE + "/parks?activities=" + query_name )
         park_info = json.load(response)
 
         speech_output = "You can do " + activity_name + " at " + str(len(park_info)) + " parks. The parks are: "
         for idx, park in enumerate(park_info):
-            if idx == (len(activities) - 2):
+            if idx == (len(park_info) - 2):
                 speech_output += park["name"] + ", and "
-            elif idx == (len(activities) -1):
+            elif idx == (len(park_info) -1):
                 speech_output += park["name"] + "."
             else:
                 speech_output += park["name"] + ", "
@@ -154,6 +154,29 @@ def get_park_description(intent):
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
+
+def get_activity_name(activity_name):
+    return {
+        "biking": "biking",
+        "boating": "boating",
+        "cross-country skiing": "cross-country skiing/showshoeing",
+        "showshoeing": "cross-country skiing/showshoeing",
+        "fishing": "fishing",
+        "geocaching": "geocaching",
+        "hiking": "hiking",
+        "horseback riding": "horseback trails",
+        "hunting": "hunting",
+        "ice fishing": "ice fishing",
+        "ice skating": "ice skating",
+        "jet skiing": "jet skiing",
+        "snow tubing": "snow tubing",
+        "swimming": "swimming",
+        "water skiing": "water skiing",
+        "wildlife viewing": "wildlife/bird viewing",
+        "bird viewing": "wildlife/bird viewing",
+        "bird watching": "wildlife/bird viewing",
+        "winter camping": "winter camping",
+    }.get(activity_name)
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     return {
