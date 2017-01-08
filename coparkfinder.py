@@ -32,6 +32,8 @@ def on_intent(intent_request, session):
         return get_park_description(intent)
     elif intent_name == "ParkActivities":
         return get_park_activities(intent)
+    elif intent_name == "ParksForActivity":
+        return get_parks_for_activity(intent)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
@@ -44,7 +46,7 @@ def on_session_ended(session_ended_request, session):
 
 def handle_session_end_request():
     card_title = "COParkFinder - Thanks"
-    speech_output = "Thank you for using the COParkFinder skill. See you next time!"
+    speech_output = "Thank you for using the Colorado Park Finder skill. See you next time!"
     should_end_session = True
 
 def get_welcome_response():
@@ -94,8 +96,36 @@ def get_park_activities(intent):
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
+def get_parks_for_activity(intent):
+    session_attributes = {}
+    card_title = "Parks For Activity"
+    speech_output = "I'm not sure which activity you wanted to hear about." \
+                    "Please try again."
+    reprompt_text = "I'm not sure which activity you wanted to hear about." \
+                    "Try asking about boating or fishing for example."
+    should_end_session = False
+    if "Activity" in intent["slots"]:
+        activity_name = intent["slots"]["Activity"]["value"]
+        query_name = "'" + activity_name.replace(" ", "%20") + "'"
 
+        card_title = "Parks With " + activity_name.title()
 
+        response = urllib2.urlopen(API_BASE + "/parks?activity=" + query_name )
+        park_info = json.load(response)
+
+        speech_output = "You can do " + activity_name + " at " + str(len(park_info)) + " parks. The parks are: "
+        for idx, park in enumerate(park_info):
+            if idx == (len(activities) - 2):
+                speech_output += park["name"] + ", and "
+            elif idx == (len(activities) -1):
+                speech_output += park["name"] + "."
+            else:
+                speech_output += park["name"] + ", "
+
+        reprompt_text = ""
+
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
 
 
 def get_park_description(intent):
